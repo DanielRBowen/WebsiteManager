@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -22,12 +23,14 @@ namespace WebsiteManager
             processInfo.RedirectStandardInput = true;
             processInfo.RedirectStandardOutput = true;
 
-            Task.Run(() =>
+            var commandTask = Task.Run(() =>
             {
                 using var process = Process.Start(processInfo);
-                Thread.Sleep(2000);
+                process.Kill();
                 process.Close();
             });
+
+            commandTask.Wait(TimeSpan.FromSeconds(2));
 
             //var output = new StringBuilder();
 
