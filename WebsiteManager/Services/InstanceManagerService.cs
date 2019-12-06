@@ -47,18 +47,16 @@ namespace WebsiteManager.Services
 
                 //DirectoryUtility.DirectoryCopy(sourcePath, destinationPath, true);
                 //string copyOutput = null;
-                CommandlineUtility.Copy(sourcePath, destinationPath, null);
+                var copyOutput = CommandlineUtility.Copy(sourcePath, destinationPath, null);
 
-                //if (string.IsNullOrWhiteSpace(copyOutput))
-                //{
-                //    _logger.LogError("Couldn't copy correctly. The copy output is null");
-                //    return false;
-                //    throw new InvalidOperationException("Unable to publish using cli");
-                //}
-                //else
-                //{
-                //}
-                await Task.Delay(5000);
+                if (string.IsNullOrWhiteSpace(copyOutput))
+                {
+                    _logger.LogError("Couldn't copy correctly. The copy output is null");
+                    return false;
+                    throw new InvalidOperationException("Unable to publish using cli");
+                }
+
+                _logger.LogInformation(copyOutput);
                 _logger.LogInformation("Template source copied from: {sourcePath} to: {destinationPath}", sourcePath, destinationPath);
                 string appSettingsPath = $"{destinationPath}\\{originalSourceFolderName}\\appsettings.json";
                 bool isNewDatabaseNameWritten = false;
@@ -72,8 +70,6 @@ namespace WebsiteManager.Services
                     _logger.LogError($"Appsettings path doesn't exist at this time. Appsettings path Path: {appSettingsPath}");
                     return false;
                 }
-
-                //string publishOutput = null;
 
                 if (isNewDatabaseNameWritten == false)
                 {
@@ -91,23 +87,17 @@ namespace WebsiteManager.Services
                     return false;
                 }
 
-                CommandlineUtility.BuildAndPublish(destinationPath);
+                var publishOutput = CommandlineUtility.BuildAndPublish(destinationPath);
+
+                if (string.IsNullOrWhiteSpace(publishOutput))
+                {
+                    _logger.LogError("Couldn't publish intance correctly. The publish output is null");
+                    return false;
+                    throw new InvalidOperationException("Unable to publish using cli");
+                }
+
+                _logger.LogInformation(publishOutput);
                 _logger.LogInformation($"New instance built and published with name: {instanceName}");
-
-                //publishOutput = await CommandlineUtility.BuildAndPublish(destinationPath);
-
-                //if (string.IsNullOrWhiteSpace(publishOutput))
-                //{
-                //    _logger.LogError("Couldn't publish correctly. The publish output is null");
-                //    return false;
-                //    throw new InvalidOperationException("Unable to publish using cli");
-                //}
-                //else
-                //{
-
-                //}
-
-
                 return true;
             }
             catch (Exception ex)

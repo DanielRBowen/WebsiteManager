@@ -1,17 +1,18 @@
-﻿using System;
-using System.Diagnostics;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using System.Diagnostics;
 
 namespace WebsiteManager
 {
     public static class CommandlineUtility
     {
-        // https://stackoverflow.com/questions/13738168/run-command-line-code-programmatically-using-c-sharp
-        public static void ExecuteCommand(string command, string workingDirectory)
+        /// <summary>
+        /// https://stackoverflow.com/questions/13738168/run-command-line-code-programmatically-using-c-sharp
+        /// https://stackoverflow.com/questions/4291912/process-start-how-to-get-the-output
+        /// </summary>
+        /// <param name="command"></param>
+        /// <param name="workingDirectory"></param>
+        public static string ExecuteCommand(string command, string workingDirectory)
         {
-            var processInfo = new ProcessStartInfo("cmd.exe", "/K " + command);
+            var processInfo = new ProcessStartInfo("cmd.exe", "/K " + command + " & exit");
 
             if (string.IsNullOrWhiteSpace(workingDirectory) == false)
             {
@@ -22,41 +23,31 @@ namespace WebsiteManager
             processInfo.UseShellExecute = false;
             processInfo.RedirectStandardInput = true;
             processInfo.RedirectStandardOutput = true;
+            processInfo.RedirectStandardError = true;
 
-            var commandTask = Task.Run(() =>
+            using var process = new Process
             {
-                using var process = Process.Start(processInfo);
-                process.Kill();
-                process.Close();
-            });
+                StartInfo = processInfo,
+                EnableRaisingEvents = true
+            };
 
-            commandTask.Wait(TimeSpan.FromSeconds(2));
-
-            //var output = new StringBuilder();
-
-            //await Task.Run(() =>
-            //{
-            //    while (!process.StandardOutput.EndOfStream)
-            //    {
-            //        output.Append(process.StandardOutput.ReadLine());
-            //    }
-            //});
-
-            //process.StandardInput.WriteLine("exit");
-            //process.Close();
-            //return output.ToString();
+            process.Start();
+            var output = process.StandardOutput.ReadToEnd();
+            process.Kill();
+            process.Close();
+            return output;
         }
 
-        public static void BuildAndPublish(string workingDirectory)
+        public static string BuildAndPublish(string workingDirectory)
         {
             string publishCommand = "dotnet msbuild -t:Publish -p:Configuration=Release";
-            ExecuteCommand(publishCommand, workingDirectory);
+            return ExecuteCommand(publishCommand, workingDirectory);
         }
 
-        public static void Copy(string sourcePath, string destinationPath, string workingDirectory)
+        public static string Copy(string sourcePath, string destinationPath, string workingDirectory)
         {
             string copyCommand = $"Xcopy /E /I {sourcePath} {destinationPath}";
-            ExecuteCommand(copyCommand, workingDirectory);
+            return ExecuteCommand(copyCommand, workingDirectory);
         }
     }
 }
